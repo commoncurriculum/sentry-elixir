@@ -80,6 +80,7 @@ defmodule Sentry.Client do
 
     result =
       with {:ok, %Event{} = event} <- maybe_call_before_send(event, before_send),
+           :ok <- mark_current_span(event),
            :ok <- ensure_dsn_configured(),
            :ok <- sample_event(sample_rate),
            :ok <- maybe_dedupe(event) do
@@ -153,6 +154,12 @@ defmodule Sentry.Client do
       :ignored ->
         :ignored
     end
+  end
+
+  if Sentry.OpenTelemetry.VersionChecker.tracing_compatible?() do
+    defp mark_current_span(event), do: Sentry.OpenTelemetry.ErrorStatus.mark_current_span(event)
+  else
+    defp mark_current_span(_event), do: :ok
   end
 
   defp ensure_dsn_configured do
