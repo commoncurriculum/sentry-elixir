@@ -343,7 +343,7 @@ if Sentry.OpenTelemetry.VersionChecker.tracing_compatible?() do
       {op, description}
     end
 
-    defp get_op_description(%{attributes: %{"db.system.name" => _db_system_name}} = span_record) do
+    defp get_op_description(%{attributes: %{"db.system.name" => _}} = span_record) do
       db_query_text = Map.get(span_record.attributes, "db.query.text")
 
       {"db", db_query_text}
@@ -387,7 +387,7 @@ if Sentry.OpenTelemetry.VersionChecker.tracing_compatible?() do
     end
 
     defp span_data(span_record) do
-      data = filter_attributes(span_record.attributes)
+      data = span_record.attributes
 
       case span_record.status do
         otel_status(code: :error, message: message) ->
@@ -459,19 +459,6 @@ if Sentry.OpenTelemetry.VersionChecker.tracing_compatible?() do
     defp to_status(status) when status in 500..599, do: "internal_error"
 
     defp to_status(_any), do: "unknown_error"
-
-    defp filter_attributes(attributes) do
-      attributes
-      |> Enum.reject(fn {key, value} ->
-        case {key, value} do
-          {"db.url", "ecto:"} -> true
-          {"db.url", nil} -> true
-          {"db.url", ""} -> true
-          _ -> false
-        end
-      end)
-      |> Map.new()
-    end
 
     # Format span links according to Sentry spec
     # https://develop.sentry.dev/sdk/telemetry/traces/span-links/

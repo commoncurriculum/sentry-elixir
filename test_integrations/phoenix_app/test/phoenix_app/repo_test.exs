@@ -30,7 +30,5 @@ defmodule PhoenixApp.RepoTest do
 
     assert String.starts_with?(trace["description"], "SELECT")
     assert String.starts_with?(trace["data"]["db.query.text"], "SELECT")
-
-    refute Map.has_key?(trace["data"], "db.url")
   end
 end
