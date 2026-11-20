@@ -17,7 +17,7 @@ defmodule PhoenixApp.Application do
 
     OpentelemetryPhoenix.setup(adapter: :bandit)
     OpentelemetryOban.setup()
-    OpentelemetryEcto.setup([:phoenix_app, :repo], db_statement: :enabled)
+    OpentelemetryEcto.setup(event_prefix: [:phoenix_app, :repo])
     OpentelemetryLoggerMetadata.setup()
 
     children = [

@@ -6,7 +6,6 @@ defmodule Sentry.Opentelemetry.SpanProcessorTest do
   require OpenTelemetry.Tracer, as: Tracer
   alias OpenTelemetry.SemConv.Incubating.HTTPAttributes, as: HTTPAttributes
   alias OpenTelemetry.SemConv.Incubating.URLAttributes, as: URLAttributes
-  alias OpenTelemetry.SemConv.Incubating.DBAttributes, as: DBAttributes
   alias OpenTelemetry.SemConv.ClientAttributes, as: ClientAttributes
 
   import ExUnit.CaptureLog
@@ -391,8 +390,8 @@ defmodule Sentry.Opentelemetry.SpanProcessorTest do
         Tracer.with_span "db.query:users", %{
           kind: :client,
           attributes: %{
-            "db.system" => :postgresql,
-            "db.statement" => "INSERT INTO users (name) VALUES ($1)"
+            "db.system.name" => :postgresql,
+            "db.query.text" => "INSERT INTO users (name) VALUES ($1)"
           }
         } do
           Process.sleep(10)
@@ -401,8 +400,8 @@ defmodule Sentry.Opentelemetry.SpanProcessorTest do
         Tracer.with_span "db.query:notifications", %{
           kind: :client,
           attributes: %{
-            "db.system" => :postgresql,
-            "db.statement" => "INSERT INTO notifications (user_id) VALUES ($1)"
+            "db.system.name" => :postgresql,
+            "db.query.text" => "INSERT INTO notifications (user_id) VALUES ($1)"
           }
         } do
           Process.sleep(10)
@@ -425,10 +424,10 @@ defmodule Sentry.Opentelemetry.SpanProcessorTest do
       [span1, span2] = tx["spans"]
       assert span1["description"] =~ "INSERT INTO"
       assert span2["description"] =~ "INSERT INTO"
-      assert span1["data"]["db.system"] == "postgresql"
-      assert span2["data"]["db.system"] == "postgresql"
-      assert span1["data"]["db.statement"] =~ "INSERT INTO users"
-      assert span2["data"]["db.statement"] =~ "INSERT INTO notifications"
+      assert span1["data"]["db.system.name"] == "postgresql"
+      assert span2["data"]["db.system.name"] == "postgresql"
+      assert span1["data"]["db.query.text"] =~ "INSERT INTO users"
+      assert span2["data"]["db.query.text"] =~ "INSERT INTO notifications"
 
       # Verify all spans share the same trace ID (from the external parent)
       trace_id = tx["contexts"]["trace"]["trace_id"]
@@ -470,8 +469,8 @@ defmodule Sentry.Opentelemetry.SpanProcessorTest do
         Tracer.with_span "db.query:users", %{
           kind: :client,
           attributes: %{
-            "db.system" => :postgresql,
-            "db.statement" => "INSERT INTO users (name) VALUES ($1)"
+            "db.system.name" => :postgresql,
+            "db.query.text" => "INSERT INTO users (name) VALUES ($1)"
           }
         } do
           Process.sleep(10)
@@ -601,8 +600,8 @@ defmodule Sentry.Opentelemetry.SpanProcessorTest do
       Tracer.with_span "SELECT users", %{
         kind: :client,
         attributes: %{
-          DBAttributes.db_system() => :postgresql,
-          "db.statement" => "SELECT * FROM users WHERE id = $1"
+          "db.system.name" => :postgresql,
+          "db.query.text" => "SELECT * FROM users WHERE id = $1"
         }
       } do
         Process.sleep(1)
@@ -624,7 +623,7 @@ defmodule Sentry.Opentelemetry.SpanProcessorTest do
       Tracer.with_span "db.connect", %{
         kind: :client,
         attributes: %{
-          DBAttributes.db_system() => :postgresql
+          "db.system.name" => :postgresql
         }
       } do
         Process.sleep(1)
@@ -711,8 +710,8 @@ defmodule Sentry.Opentelemetry.SpanProcessorTest do
         Tracer.with_span "db.query", %{
           kind: :client,
           attributes: %{
-            DBAttributes.db_system() => :mysql,
-            "db.statement" => "INSERT INTO orders (user_id) VALUES (?)"
+            "db.system.name" => :mysql,
+            "db.query.text" => "INSERT INTO orders (user_id) VALUES (?)"
           }
         } do
           Process.sleep(1)
@@ -744,8 +743,8 @@ defmodule Sentry.Opentelemetry.SpanProcessorTest do
           Tracer.with_span "database operation", %{
             kind: :client,
             attributes: %{
-              DBAttributes.db_system() => system,
-              "db.statement" => statement
+              "db.system.name" => system,
+              "db.query.text" => statement
             }
           } do
             Tracer.set_status(:error, message)
@@ -759,7 +758,7 @@ defmodule Sentry.Opentelemetry.SpanProcessorTest do
         assert child["status"] == "unknown_error"
         assert child["data"]["otel.status_code"] == "ERROR"
         assert child["data"]["otel.status_description"] == message
-        assert child["data"]["db.statement"] == statement
+        assert child["data"]["db.query.text"] == statement
       end
     end
 
