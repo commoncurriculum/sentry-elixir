@@ -220,15 +220,15 @@ test.describe("Tracing", () => {
       expect(dbSpans.length).toBeGreaterThan(0);
 
       dbSpans.forEach((dbSpan: any) => {
-        expect(dbSpan.data["db.system"]).toBeDefined();
+        expect(dbSpan.data["db.system.name"]).toBeDefined();
 
         expect(dbSpan.description).toBeDefined();
         expect(dbSpan.description.length).toBeGreaterThan(0);
 
         expect(dbSpan.description).toMatch(/SELECT/i);
 
-        expect(dbSpan.data["db.statement"]).toBeDefined();
-        expect(dbSpan.data["db.statement"]).toMatch(/SELECT/i);
+        expect(dbSpan.data["db.query.text"]).toBeDefined();
+        expect(dbSpan.data["db.query.text"]).toMatch(/SELECT/i);
       });
     });
   });
