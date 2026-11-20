@@ -154,7 +154,12 @@ if Sentry.OpenTelemetry.VersionChecker.tracing_compatible?() do
     defp liveview_span?(_), do: false
 
     defp oban_consumer_span?(%{kind: :consumer, attributes: attributes}) do
-      Map.get(attributes, to_string(MessagingAttributes.messaging_system())) == :oban
+      oban_span?(attributes)
+    end
+
+    defp oban_span?(attributes) do
+      Map.get(attributes, "messaging.system.name") == :oban or
+        Map.get(attributes, to_string(MessagingAttributes.messaging_system())) == :oban
     end
 
     defp finalize_transaction(span_record, opts \\ []) do
@@ -264,14 +269,13 @@ if Sentry.OpenTelemetry.VersionChecker.tracing_compatible?() do
       })
     end
 
-    defp transaction_name(
-           %{attributes: %{unquote(to_string(MessagingAttributes.messaging_system())) => :oban}} =
-             span_record
-         ) do
-      span_record.attributes["oban.job.worker"]
+    defp transaction_name(span_record) do
+      if oban_span?(span_record.attributes) do
+        span_record.attributes["oban.job.worker"]
+      else
+        span_record.name
+      end
     end
-
-    defp transaction_name(span_record), do: span_record.name
 
     defp build_trace_context(span_record, opts) do
       {op, description} = get_op_description(span_record)
@@ -351,15 +355,12 @@ if Sentry.OpenTelemetry.VersionChecker.tracing_compatible?() do
       {"db", db_query_text}
     end
 
-    defp get_op_description(%{
-           attributes:
-             %{unquote(to_string(MessagingAttributes.messaging_system())) => :oban} = attributes
-         }) do
-      {"queue.process", attributes["oban.job.worker"]}
-    end
-
     defp get_op_description(span_record) do
-      {span_record.name, span_record.name}
+      if oban_span?(span_record.attributes) do
+        {"queue.process", span_record.attributes["oban.job.worker"]}
+      else
+        {span_record.name, span_record.name}
+      end
     end
 
     defp build_span(span_record) do

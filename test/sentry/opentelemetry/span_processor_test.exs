@@ -661,6 +661,31 @@ defmodule Sentry.Opentelemetry.SpanProcessorTest do
     end
 
     @tag span_storage: true
+    test "Oban span with messaging.system.name uses queue.process op and worker as description",
+         %{bypass: bypass} do
+      put_test_config(environment_name: "test", traces_sample_rate: 1.0)
+
+      ref = setup_bypass_envelope_collector(bypass)
+
+      Tracer.with_span "process emails", %{
+        kind: :consumer,
+        attributes: %{
+          "messaging.system.name": :oban,
+          "oban.job.worker": "MyApp.Workers.EmailWorker"
+        }
+      } do
+        Process.sleep(1)
+      end
+
+      assert_sentry_transaction(ref,
+        contexts: %{
+          "trace" => %{"op" => "queue.process", "description" => "MyApp.Workers.EmailWorker"}
+        },
+        transaction: "MyApp.Workers.EmailWorker"
+      )
+    end
+
+    @tag span_storage: true
     test "generic span uses span name for both op and description", %{bypass: bypass} do
       put_test_config(environment_name: "test", traces_sample_rate: 1.0)
 
