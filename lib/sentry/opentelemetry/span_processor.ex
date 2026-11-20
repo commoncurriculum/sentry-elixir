@@ -5,7 +5,6 @@ if Sentry.OpenTelemetry.VersionChecker.tracing_compatible?() do
     @behaviour :otel_span_processor
 
     alias OpenTelemetry.SemConv.ClientAttributes, as: ClientAttributes
-    require OpenTelemetry.SemConv.Incubating.DBAttributes, as: DBAttributes
     require OpenTelemetry.SemConv.Incubating.HTTPAttributes, as: HTTPAttributes
     alias OpenTelemetry.SemConv.Incubating.URLAttributes, as: URLAttributes
 
@@ -344,11 +343,8 @@ if Sentry.OpenTelemetry.VersionChecker.tracing_compatible?() do
       {op, description}
     end
 
-    defp get_op_description(
-           %{attributes: %{unquote(to_string(DBAttributes.db_system())) => _db_system}} =
-             span_record
-         ) do
-      db_query_text = Map.get(span_record.attributes, "db.statement")
+    defp get_op_description(%{attributes: %{"db.system.name" => _db_system_name}} = span_record) do
+      db_query_text = Map.get(span_record.attributes, "db.query.text")
 
       {"db", db_query_text}
     end

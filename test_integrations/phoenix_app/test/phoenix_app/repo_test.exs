@@ -19,10 +19,8 @@ defmodule PhoenixApp.RepoTest do
           trace: %{
             op: "db",
             data: %{
-              "db.system" => "sqlite",
-              "db.type" => "sql",
-              "db.instance" => "db/test.sqlite3",
-              "db.name" => "db/test.sqlite3"
+              "db.system.name" => "sqlite",
+              "db.namespace" => "db/test.sqlite3"
             }
           }
         }
@@ -31,7 +29,7 @@ defmodule PhoenixApp.RepoTest do
     trace = tx["contexts"]["trace"]
 
     assert String.starts_with?(trace["description"], "SELECT")
-    assert String.starts_with?(trace["data"]["db.statement"], "SELECT")
+    assert String.starts_with?(trace["data"]["db.query.text"], "SELECT")
 
     refute Map.has_key?(trace["data"], "db.url")
   end

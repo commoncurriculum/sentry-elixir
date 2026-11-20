@@ -645,7 +645,7 @@ defmodule Sentry.Opentelemetry.SamplerTest do
       assert context[:transaction_context][:op] == "POST /api"
       assert context[:transaction_context][:attributes] == http_attributes
 
-      db_attributes = %{"db.system" => "postgresql"}
+      db_attributes = %{"db.system.name" => "postgresql"}
 
       Sampler.should_sample(test_ctx, 124, nil, "SELECT users", :client, db_attributes, drop: [])
 
@@ -653,7 +653,7 @@ defmodule Sentry.Opentelemetry.SamplerTest do
       assert context[:transaction_context][:op] == "SELECT users"
       assert context[:transaction_context][:attributes] == db_attributes
 
-      oban_attributes = %{"messaging.system" => :oban}
+      oban_attributes = %{"messaging.system.name" => :oban}
 
       Sampler.should_sample(test_ctx, 125, nil, "MyWorker", :consumer, oban_attributes, drop: [])
 

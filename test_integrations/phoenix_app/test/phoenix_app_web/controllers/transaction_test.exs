@@ -83,7 +83,7 @@ defmodule Sentry.Integrations.Phoenix.TransactionTest do
 
     [db_span] = db_spans
     assert String.starts_with?(db_span["description"], "SELECT")
-    assert db_span["data"]["db.system"] == "sqlite"
+    assert db_span["data"]["db.system.name"] == "sqlite"
 
     root_span_id = tx["contexts"]["trace"]["span_id"]
     child_spans = Enum.filter(tx["spans"], &(&1["parent_span_id"] == root_span_id))

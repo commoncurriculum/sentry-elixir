@@ -68,8 +68,7 @@ defmodule PhoenixAppWeb.UserLiveTest do
       assert [span] = transaction_save["spans"]
       assert span["op"] == "db"
       assert span["description"] =~ "INSERT INTO \"users\""
-      assert span["data"]["db.system"] == "sqlite"
-      assert span["data"]["db.type"] == "sql"
+      assert span["data"]["db.system.name"] == "sqlite"
       assert span["origin"] == "opentelemetry_ecto"
     end
 
