@@ -8,7 +8,6 @@ if Sentry.OpenTelemetry.VersionChecker.tracing_compatible?() do
     require OpenTelemetry.SemConv.Incubating.DBAttributes, as: DBAttributes
     require OpenTelemetry.SemConv.Incubating.HTTPAttributes, as: HTTPAttributes
     alias OpenTelemetry.SemConv.Incubating.URLAttributes, as: URLAttributes
-    require OpenTelemetry.SemConv.Incubating.MessagingAttributes, as: MessagingAttributes
 
     alias Sentry.{ClientError, ClientReport, Config, LoggerUtils}
 
@@ -158,8 +157,7 @@ if Sentry.OpenTelemetry.VersionChecker.tracing_compatible?() do
     end
 
     defp oban_span?(attributes) do
-      Map.get(attributes, "messaging.system.name") == :oban or
-        Map.get(attributes, to_string(MessagingAttributes.messaging_system())) == :oban
+      Map.get(attributes, "messaging.system.name") == :oban
     end
 
     defp finalize_transaction(span_record, opts \\ []) do

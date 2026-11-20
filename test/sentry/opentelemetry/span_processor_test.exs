@@ -8,7 +8,6 @@ defmodule Sentry.Opentelemetry.SpanProcessorTest do
   alias OpenTelemetry.SemConv.Incubating.URLAttributes, as: URLAttributes
   alias OpenTelemetry.SemConv.Incubating.DBAttributes, as: DBAttributes
   alias OpenTelemetry.SemConv.ClientAttributes, as: ClientAttributes
-  alias OpenTelemetry.SemConv.Incubating.MessagingAttributes, as: MessagingAttributes
 
   import ExUnit.CaptureLog
   import Sentry.Test.Assertions
@@ -638,31 +637,6 @@ defmodule Sentry.Opentelemetry.SpanProcessorTest do
 
     @tag span_storage: true
     test "Oban span uses queue.process op and worker as description", %{bypass: bypass} do
-      put_test_config(environment_name: "test", traces_sample_rate: 1.0)
-
-      ref = setup_bypass_envelope_collector(bypass)
-
-      Tracer.with_span "MyApp.Workers.EmailWorker process", %{
-        kind: :consumer,
-        attributes: %{
-          MessagingAttributes.messaging_system() => :oban,
-          "oban.job.worker" => "MyApp.Workers.EmailWorker"
-        }
-      } do
-        Process.sleep(1)
-      end
-
-      assert_sentry_transaction(ref,
-        contexts: %{
-          "trace" => %{"op" => "queue.process", "description" => "MyApp.Workers.EmailWorker"}
-        },
-        transaction: "MyApp.Workers.EmailWorker"
-      )
-    end
-
-    @tag span_storage: true
-    test "Oban span with messaging.system.name uses queue.process op and worker as description",
-         %{bypass: bypass} do
       put_test_config(environment_name: "test", traces_sample_rate: 1.0)
 
       ref = setup_bypass_envelope_collector(bypass)
