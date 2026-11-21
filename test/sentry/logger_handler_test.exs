@@ -335,6 +335,20 @@ defmodule Sentry.LoggerHandlerTest do
       assert Enum.find(exception.stacktrace.frames, &(&1.function =~ "Keyword.fetch!/2"))
     end
 
+    test "a GenServer raising an error is reported with the GenServer, last message and state",
+         %{sender_ref: ref, test_genserver: test_genserver} do
+      run_and_catch_exit(test_genserver, fn -> Keyword.fetch!([], :foo) end)
+
+      assert_receive {^ref, event}
+      assert [%{type: "KeyError"}] = event.exception
+      assert event.message.message == "GenServer %s terminating"
+      assert event.message.params == [inspect(test_genserver)]
+      assert event.message.formatted == "GenServer #{inspect(test_genserver)} terminating"
+      assert event.extra.last_message =~ ~r/^\{:run, .*/
+      assert event.extra.pid_which_sent_last_message == inspect(self())
+      assert event.extra.genserver_state == "[]"
+    end
+
     test "a GenServer throw is reported", %{sender_ref: ref, test_genserver: test_genserver} do
       run_and_catch_exit(test_genserver, fn ->
         throw(:testing_throw)
