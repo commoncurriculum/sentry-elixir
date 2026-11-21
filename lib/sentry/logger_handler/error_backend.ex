@@ -126,12 +126,16 @@ defmodule Sentry.LoggerHandler.ErrorBackend do
 
   defp log_from_crash_reason(
          {exception, stacktrace},
-         _chardata_message,
+         chardata_message,
          sentry_opts,
          config
        )
        when is_exception(exception) and is_list(stacktrace) do
-    sentry_opts = Keyword.merge(sentry_opts, stacktrace: stacktrace, handled: false)
+    sentry_opts =
+      sentry_opts
+      |> Keyword.merge(stacktrace: stacktrace, handled: false)
+      |> put_genserver_context(chardata_message)
+
     capture(:exception, exception, sentry_opts, config)
   end
 
@@ -177,6 +181,39 @@ defmodule Sentry.LoggerHandler.ErrorBackend do
 
   defp log_from_crash_reason(_other_reason, _string_message, _sentry_opts, _config) do
     :ok
+  end
+
+  defp put_genserver_context(
+         sentry_opts,
+         [["GenServer ", inspected_pid, " terminating" | _] | _] = chardata_message
+       ) do
+    sentry_opts
+    |> Keyword.merge(
+      message: "GenServer %s terminating",
+      interpolation_parameters: [inspected_pid]
+    )
+    |> add_extra_to_sentry_opts(extra_info_from_message(chardata_message))
+    |> add_extra_to_sentry_opts(sender_from_message(chardata_message))
+  end
+
+  defp put_genserver_context(sentry_opts, _chardata_message) do
+    sentry_opts
+  end
+
+  defp sender_from_message([
+         [_, _, _, _, _, "\nLast message", [" (from ", inspected_sender_pid, ")"] | _] | _
+       ]) do
+    %{pid_which_sent_last_message: inspected_sender_pid}
+  end
+
+  defp sender_from_message([
+         [_, _, _, _, "\nLast message", [" (from ", inspected_sender_pid, ")"] | _] | _
+       ]) do
+    %{pid_which_sent_last_message: inspected_sender_pid}
+  end
+
+  defp sender_from_message(_chardata_message) do
+    %{}
   end
 
   defp extra_info_from_message([
