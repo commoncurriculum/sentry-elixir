@@ -2,7 +2,7 @@ if Sentry.OpenTelemetry.VersionChecker.tracing_compatible?() do
   defmodule Sentry.OpenTelemetry.ErrorStatus do
     @moduledoc false
 
-    require OpenTelemetry.Tracer, as: Tracer
+    alias OpenTelemetry.Tracer
 
     alias Sentry.Event
 
